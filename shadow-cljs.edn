@@ -1,0 +1,13 @@
+;; shadow-cljs configuration
+{:source-paths
+ ["src/dev"
+  "src/main"
+  "src/test"]
+
+ :dependencies
+ []
+
+ :builds
+ {:app {:target :node-script
+				:main sskg.core/main
+				:output-to "out/sskg.js"}}}
