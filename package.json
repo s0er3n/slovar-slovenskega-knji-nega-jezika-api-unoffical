@@ -1,11 +1,13 @@
 {
-	"private": true,
-	"version": "0.0.0",
-	"scripts": {
-		"deploy": "wrangler publish",
-		"dev": "wrangler dev --local"
-	},
-	"devDependencies": {
-		"wrangler": "^2.0.0"
-	}
+  "name": "sskj",
+  "version": "0.0.1",
+  "private": true,
+  "devDependencies": {
+    "shadow-cljs": "2.20.20"
+  },
+  "dependencies": {
+    "axios": "^1.3.2",
+    "express": "^4.18.2",
+    "jsdom": "^21.1.0"
+  }
 }
