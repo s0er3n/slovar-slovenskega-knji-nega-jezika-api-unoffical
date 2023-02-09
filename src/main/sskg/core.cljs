@@ -7,12 +7,37 @@
 						[oops.core :refer [oget ocall ocall!]]
             [clojure.string :as str]))
 
-(def entry-path
+#_(def esskj-path
+  "div.list-group.results div.list-group-item.entry[data-citation*=\"<em>eSSKJ: Slovar slovenskega knjižnega jezika 2016–2017</em>\"] div.entry-content")
+
+#_(def sskj2-path
+  "div.list-group.results div.list-group-item.entry[data-citation*=\"<em>Slovar slovenskega knjižnega jezika, druga, dopolnjena in deloma prenovljena izdaja</em>\"] div.entry-content")
+
+(def entry-content-selector
   "div.list-group.results div.list-group-item.entry div.entry-content")
 
-(def ul-path "ul")
+(def rm-elems-selector
+  "style, script, .tooltip_templates, p.entry-citation, span.font_xsmall.color_dark, span.font_xsmall.color_dark + span, span[data-group=\"terminology\"]")
 
 (def url  "https://www.fran.si/iskanje")
+
+(defn entry-content
+	[document]
+	(ocall document "?querySelector" entry-content-selector))
+
+(defn element-text
+  [element]
+  (let [elem-clone (ocall element "?cloneNode" true)
+        non-text-elems (-> elem-clone
+                           (ocall "?querySelectorAll" rm-elems-selector))]
+    (ocall! non-text-elems "forEach"
+            #(ocall! % "?remove"))
+    (-> elem-clone
+        (oget "?innerHTML")
+        (str/replace #"<" " <")
+        (str/replace #">" "> ")
+        (JSDOM.)
+        (oget "?window.?document.?firstChild.?textContent"))))
 
 (defn word-definition
   "Returns channel with word definition."
@@ -24,13 +49,13 @@
 																								:Query word}}))
             data (.-data res)
             dom (JSDOM. data)
-            document (.. dom -window -document)
-            uls (-> document
-                    (ocall "querySelector" entry-path)
-                    (ocall "querySelectorAll" ul-path)
-                    (js/Array.from))]
-        (str/join " " (map #(oget % "textContent")
-													 uls)))
+						document (oget dom "window.document")
+						ec (-> document
+									 entry-content)
+						text (element-text ec)]
+        (-> text
+						(str/replace #"\s+"
+												 " ")))
       (catch :default e (js/console.error e)))))
 
 
@@ -38,9 +63,10 @@
   [req res]
   (let [word (oget req "params" "word")]
     (println "word handler called with word: " word)
-    (go (let [definition (<! (word-definition word))]
-					(println "definition for " word ": " definition)
-					(ocall! res "send" definition)))))
+    (go (let [definition (<! (word-definition word))
+							response (or definition "Not Found")]
+					(js/console.log "definition for " word ": " definition)
+					(ocall! res "send" response)))))
 
 (defn logging-middleware
 	[req res next!]
